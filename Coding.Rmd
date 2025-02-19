@@ -57,10 +57,10 @@ gmat_vs_status <- create_violin_plot(admission_train, "GMAT", "GMAT Score")
 gpa_vs_status <- create_violin_plot(admission_train, "GPA")
 grid.arrange(gmat_vs_status, gpa_vs_status, nrow = 1, ncol = 2)
 
-# Histograms
-create_hist <- function(data, xvar, xlabel = xvar) {
+# Density plots
+create_density <- function(data, xvar, xlabel = xvar) {
   p <- ggplot(data, aes(x = .data[[xvar]], fill = De)) +
-    geom_histogram() +
+    geom_density(alpha=0.7) +
     scale_fill_manual(
       name = "Admission Status",
       values = c("green", "orange", "red"), 
@@ -71,9 +71,9 @@ create_hist <- function(data, xvar, xlabel = xvar) {
     theme_bw() 
 }
 
-gpa_hist <- create_hist(admission_train, "GPA") 
-gmat_hist <- create_hist(admission_train, "GMAT", "GMAT Score")
+gpa_density <- create_density(admission_train, "GPA") 
+gmat_density <- create_density(admission_train, "GMAT", "GMAT Score")
 
-ggarrange(gmat_hist, gpa_hist, ncol=2, nrow=1, 
+ggarrange(gmat_density, gpa_density, ncol=2, nrow=1, 
           common.legend = TRUE, legend="bottom")
 ```
