@@ -67,23 +67,19 @@ create_density <- function(data, xvar, xlabel = xvar) {
       labels = c("Admit", "Border", "Do Not Admit")
     ) +
     xlab(xlabel) +
-    ylab("Count") +
+    ylab("Density") +
     theme_bw() 
 }
 
-gpa_density <- create_density(admission_train, "GPA") 
+# Only need one y-label and one legend
+gpa_density <- create_density(admission_train, "GPA") + theme(axis.title.y=element_blank())
 gmat_density <- create_density(admission_train, "GMAT", "GMAT Score")
 
 ggarrange(gmat_density, gpa_density, ncol=2, nrow=1, 
           common.legend = TRUE, legend="bottom")
 ```
 
-
-
-
-#Jocelyn
-#sorry i am not finished yet
-#please change anything you see wrong or can be improved, thanks
+#Jocelyn #sorry i am not finished yet #please change anything you see wrong or can be improved, thanks
 
 ```{r}
 #b)
