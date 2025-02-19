@@ -3,11 +3,10 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-this is a test
-
 ```{r}
-library(tidyverse)
+View(admission)
 ```
+
 
 # Rylan EDA
 
@@ -17,6 +16,7 @@ library(gridExtra)
 library(ggpubr) # For plotting histograms with common legend
 
 admission <- read.csv("admission.csv")
+admission=admission %>% select(-Group)
 
 
 
@@ -77,3 +77,99 @@ gmat_density <- create_density(admission_train, "GMAT", "GMAT Score")
 ggarrange(gmat_density, gpa_density, ncol=2, nrow=1, 
           common.legend = TRUE, legend="bottom")
 ```
+```{r message=FALSE } 
+
+# Load required libraries
+library(tidymodels)
+library(dplyr)
+library(purrr)
+
+
+set.seed(123)
+
+test_data <- admission %>% 
+  group_by(De) %>% 
+  slice_tail(n = 4) %>% 
+  ungroup()
+
+train_data <- anti_join(admission, test_data, by = c("De", "GMAT", "GPA"))
+
+# 2. Create a recipe to normalize predictors
+admission_recipe <- recipe(De ~ GMAT + GPA, data = train_data) %>%
+  step_normalize(all_predictors())
+
+# 3. Specify a KNN model with a tunable 'neighbors' parameter.
+knn_spec <- nearest_neighbor(neighbors = tune(), weight_func = "rectangular") %>%
+  set_engine("kknn") %>%
+  set_mode("classification")
+
+# 4. Create a workflow combining the recipe and model
+knn_wf <- workflow() %>%
+  add_recipe(admission_recipe) %>%
+  add_model(knn_spec)
+
+# 5. Create a grid of candidate k values (e.g., odd numbers from 1 to 21)
+k_grid <- tibble(neighbors = seq(1, 21, by = 2))
+
+# For each candidate k, fit the model on the training data and compute the test error rate.
+results <- k_grid %>%
+  mutate(
+    # Finalize the workflow with the candidate k
+    wf_model = map(neighbors, ~ finalize_workflow(knn_wf, tibble(neighbors = .x))),
+    # Fit the model on the training data
+    fit = map(wf_model, ~ fit(.x, data = train_data)),
+    # Get predictions on the test data (both class and probability predictions)
+    preds = map(fit, ~ bind_cols(
+      predict(.x, new_data = test_data, type = "class"),
+      predict(.x, new_data = test_data, type = "prob")
+    )),
+    # Compute test error rate for each candidate k
+    test_error = map_dbl(preds, ~ mean(.x$.pred_class != test_data$De))
+  )
+
+
+print(results %>% select(neighbors, test_error))
+
+# 6. Choose the optimal k (the one with the lowest test error rate)
+optimal_k <- results %>% 
+  filter(test_error == min(test_error)) %>% 
+  slice(1) %>% 
+  pull(neighbors)
+cat("Optimal k chosen:", optimal_k, "\n")
+
+# 7. Fit the final model on the training data using the optimal k
+final_wf <- finalize_workflow(knn_wf, tibble(neighbors = optimal_k))
+final_fit <- fit(final_wf, data = train_data)
+
+# 8. Get predictions on the training set for performance evaluation
+train_preds <- predict(final_fit, new_data = train_data, type = "class") %>% 
+  bind_cols(predict(final_fit, new_data = train_data, type = "prob")) %>% 
+  bind_cols(train_data %>% select(De))
+
+# Compute the training error rate
+train_error <- mean(train_preds$.pred_class != train_preds$De)
+cat("Training Error Rate:", train_error, "\n")
+
+# 9. Create a confusion matrix on the training set
+cm <- conf_mat(train_preds, truth = De, estimate = .pred_class)
+print(cm)
+
+
+sens_df <- sens(train_preds, truth = De, estimate = .pred_class)
+spec_df <- spec(train_preds, truth = De, estimate = .pred_class)
+macro_sens <- mean(sens_df$.estimate)
+macro_spec <- mean(spec_df$.estimate)
+cat("Macro-averaged Sensitivity (Training):", macro_sens, "\n")
+cat("Macro-averaged Specificity (Training):", macro_spec, "\n")
+
+final_test_error <- results %>% 
+  filter(neighbors == optimal_k) %>% 
+  pull(test_error)
+cat("Estimated Test Error Rate (Optimal k):", final_test_error, "\n")
+```
+
+```{r}
+print(names(train_preds))
+```
+
+
