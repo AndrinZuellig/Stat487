@@ -77,3 +77,83 @@ gmat_density <- create_density(admission_train, "GMAT", "GMAT Score")
 ggarrange(gmat_density, gpa_density, ncol=2, nrow=1, 
           common.legend = TRUE, legend="bottom")
 ```
+
+
+
+
+#Jocelyn
+#sorry i am not finished yet
+#please change anything you see wrong or can be improved, thanks
+
+```{r}
+#b)
+
+library(MASS) # For LDA and QDA
+library(caret) # For Confusion Matrix
+library(ggplot2)
+
+
+
+#Linear Discriminant Analysis on Training Data
+vector <- c(-c(28,29,30,31,56,57,58,59,82,83,84,85))
+#eliminates last 4 observations of each of the 3 groups
+lda_model <- lda(De ~ GMAT + GPA, data=admission, subset = vector)
+#LDA with training data
+
+lda_test_pred <- predict(lda_model, admission_test)
+lda_test_class <- lda_test_pred$class
+De_test <-admission_test$De
+table(lda_test_class, De_test)
+#LDA Confusion Table for Test Data
+
+Fraction_correct_test_predictions <- mean(lda_test_class == De_test)
+misclassification_rate_test_LDA <- 1 - Fraction_correct_test_predictions
+misclassification_rate_test_LDA
+#Overall LDA misclassification rate for Test Data
+
+lda_train_pred <- predict(lda_model, admission_train)
+lda_train_class <- lda_train_pred$class
+De_train <- admission_train$De
+table(lda_train_class, De_train)
+#LDA Confusion Table for Training Data
+
+Fraction_correct_train_predictions <- mean(lda_train_class == De_train)
+misclassification_rate_train_LDA <- 1 - Fraction_correct_train_predictions
+misclassification_rate_train_LDA
+#Overall LDA misclassification rate for Training Data
+
+
+##### plot LDA desicion boundary line
+
+
+
+#c)
+
+#Quadratic Discriminant Analysis on Training data
+qda_model <- qda(De ~ GMAT + GPA, data=admission, subset = vector)
+#QDA with training data
+
+qda_test_pred <- predict(qda_model, admission_test)
+qda_test_class <- qda_test_pred$class
+table(qda_test_class, De_test) 
+#QDA Confusion Table for Test Data
+
+Fraction_correct_test_predictions_QDA <- mean(qda_test_class == De_test)
+misclassification_rate_test_QDA <- 1 - Fraction_correct_test_predictions_QDA
+misclassification_rate_test_QDA
+#Overall QDA misclassification rate for Test Data
+
+qda_train_pred <- predict(qda_model, admission_train)
+qda_train_class <- qda_train_pred$class
+table(qda_train_class, De_train)
+#QDA Confusion Table for Training Data
+
+Fraction_correct_train_predictions_QDA <- mean(qda_train_class == De_train)
+misclassification_rate_train_QDA <- 1 - Fraction_correct_train_predictions_QDA
+misclassification_rate_train_QDA
+#Overall QDA misclassification rate for Training Data
+
+
+##### plot QDA desicion boundary line
+
+```
