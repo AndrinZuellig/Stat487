@@ -151,3 +151,89 @@ misclassification_rate_train_QDA
 ##### plot QDA desicion boundary line
 
 ```
+
+# Rylan KNN
+
+```{r}
+set.seed(1)
+
+train_X <- as.matrix(admission_train[, c('GPA', 'GMAT')])
+train_X <- scale(train_X)
+train_Y <- admission_train$De
+
+# When scaling test set, use parameters (mean and sd) from train set
+train_means <- attr(train_X, "scaled:center")
+train_sds <- attr(train_X, "scaled:scale")
+test_X <- as.matrix(admission_test[, c('GPA', 'GMAT')])
+test_X <- scale(test_X, center = train_means, scale = train_sds)
+test_Y <- admission_test$De
+
+
+calc_knn_error <- function(k, is_train_data) {
+  if(is_train_data) {
+    knn_train_out <- knn(train_X, train_X, train_Y, k=k, prob=T)
+    return(1 - mean(train_Y == knn_train_out))
+  }
+  else {
+    knn_test_out <- knn(train_X, test_X, train_Y, k=k)
+    return(1 - mean(test_Y == knn_test_out))
+  }
+}
+
+test_error_rates <- sapply(1:nrow(admission_train), calc_knn_error, 
+                           is_train_data=F)
+plot(test_error_rates)
+
+optimal_k <- which.min(test_error_rates)
+
+# Train predictions
+knn_train_out <- knn(train_X, train_X, train_Y, k=optimal_k, prob=T)
+
+# Automate extraction of performance metrics and confusion matrix
+get_perf_metrics <- function(pred, ground_truth){
+  cm <- table(True_Status=ground_truth, Predicted_Status=pred)
+  # Use this to get sensitivities and specificities
+  cm <- confusionMatrix(cm, positive="1")
+  sensitivities <- cm$byClass[,"Sensitivity"]
+  specificities <- cm$byClass[,"Specificity"]
+  overall_accuracy <- cm$overall["Accuracy"]
+  overall_error_rate <- 1 - overall_accuracy
+  mean_sens <- mean(sensitivities)
+  mean_spec <- mean(specificities)
+  
+  # Calculate the AUC
+  probs <- as.numeric(attributes(pred)$prob)
+  auc <- multiclass.roc(ground_truth, probs)$auc
+  
+  # Put the results into a table with labeled column names
+  result_matrix <- matrix(c(sensitivities, mean_sens, 
+                            specificities, mean_spec, 
+                            overall_accuracy, overall_error_rate, 
+                            auc), 
+                          nrow = 1, byrow = TRUE)
+  
+  colnames(result_matrix) <- c(paste0(names(sensitivities), " Sensitivity"),
+                               "Mean Sensitivity",
+                               paste0(names(specificities), " Specificity"),
+                               "Mean Specificity",
+                               "Overall Accuracy", 
+                               "Overall Error Rate", 
+                               "AUC")
+  
+  # Return confusion matrix and results table as list
+  results <- list(Confusion_Matrix=cm$table, Metrics=result_matrix)
+  return(results)
+}
+
+# Train Performance Metrics 
+train_metrics <- get_perf_metrics(knn_train_out, train_Y)
+train_metrics
+
+# Test Predictions
+knn_test_out <- knn(train_X, test_X, train_Y, k=optimal_k, prob=T)
+
+# Test Performance Metrics
+test_metrics <- get_perf_metrics(knn_test_out, test_Y)
+test_metrics
+
+```
