@@ -18,8 +18,6 @@ library(ggpubr) # For plotting histograms with common legend
 
 admission <- read.csv("admission.csv")
 
-
-
 str(admission)
 admission$De <- as.factor(admission$De)
 
@@ -36,7 +34,7 @@ summary(admission_train)
 ggplot(admission_train, aes(x=GPA, y=GMAT, col=De)) +
   geom_point() + 
   scale_color_manual("Admission Status",values=c("green", 'orange', "red"),
-                    labels=c("Admit", "Border", "Do Not Admit")) +
+                    labels=c("Admit", "Borderline", "Do Not Admit")) +
   xlab("GPA") +
   ylab("GMAT Score") +
   theme_bw()
@@ -49,7 +47,7 @@ create_violin_plot <- function(data, y_var, y_label=y_var) {
     guides(fill = "none") +
     xlab("Admission Status") +
     ylab(y_label) +
-    scale_x_discrete(labels = c("Admit", "Border", "Do Not Admit")) +
+    scale_x_discrete(labels = c("Admit", "Borderline", "Do Not Admit")) +
     theme_bw()
 }
 
@@ -64,7 +62,7 @@ create_density <- function(data, xvar, xlabel = xvar) {
     scale_fill_manual(
       name = "Admission Status",
       values = c("green", "orange", "red"), 
-      labels = c("Admit", "Border", "Do Not Admit")
+      labels = c("Admit", "Borderline", "Do Not Admit")
     ) +
     xlab(xlabel) +
     ylab("Density") +
