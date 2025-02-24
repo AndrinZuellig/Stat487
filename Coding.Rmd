@@ -4,20 +4,24 @@ output: html_notebook
 ---
 
 ```{r}
-
+library(MASS) # For LDA and QDA
+library(caret) # For Confusion Matrix
+library(ggplot2)
+library(class)
+library(tidyverse)
+library(gridExtra)
+library(ggpubr) # For plotting histograms with common legend
+library(pROC) 
 ```
 
 
 # Rylan EDA
 
 ```{r}
-library(class)
-library(tidyverse)
-library(gridExtra)
-library(ggpubr) # For plotting histograms with common legend
+
 
 admission <- read.csv("admission.csv")
-admission=admission %>% select(-Group)
+
 
 str(admission)
 admission$De <- as.factor(admission$De)
@@ -25,7 +29,7 @@ admission$De <- as.factor(admission$De)
 # Split into training and testing sets
 admission_test <- admission %>% 
   group_by(De) %>% 
-  slice_tail(n=4)
+  slice_head(n=5)
 
 admission_train <- anti_join(admission, admission_test)
 
@@ -94,9 +98,7 @@ print(names(train_preds))
 ```{r}
 #b)
 
-library(MASS) # For LDA and QDA
-library(caret) # For Confusion Matrix
-library(ggplot2)
+
 
 
 
@@ -368,9 +370,6 @@ test_metrics
 
 ```
 
-```{r}
-admission$GP %>% arrange()
-```
 
 
 
