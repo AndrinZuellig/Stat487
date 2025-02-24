@@ -14,7 +14,6 @@ library(ggpubr) # For plotting histograms with common legend
 library(pROC) 
 ```
 
-
 # Rylan EDA
 
 ```{r}
@@ -82,16 +81,9 @@ ggarrange(gmat_density, gpa_density, ncol=2, nrow=1,
           common.legend = TRUE, legend="bottom")
 ```
 
-
-
-
-
 ```{r}
 print(names(train_preds))
 ```
-
-
-
 
 #Jocelyn #sorry i am not finished yet #please change anything you see wrong or can be improved, thanks
 
@@ -166,8 +158,8 @@ misclassification_rate_train_QDA
 
 ```
 
-
 # Kira lda and qda (I commented out my code because Jocelyn has similar code, and I don't want it to cause any problems when running the code)
+
 ```{r}
 # # lda with test data
 # lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
@@ -198,7 +190,6 @@ misclassification_rate_train_QDA
 # cat("overall error rate:", overall_error_rate_ldatest)
 ```
 
-
 ```{r}
 # # lda with training data
 # lda.pred_train <- predict(lda.fit, admission_train)
@@ -224,7 +215,6 @@ misclassification_rate_train_QDA
 # cat("avg of the specificities:", mean(specificities_ldatrain), "\n")
 # cat("overall error rate:", overall_error_rate_ldatrain)
 ```
-
 
 ```{r}
 # # qda with test data
@@ -256,7 +246,6 @@ misclassification_rate_train_QDA
 # cat("overall error rate:", overall_error_rate_qdatest)
 ```
 
-
 ```{r}
 # # qda with training data
 # qda.pred_train <- predict(qda.fit, admission_train)
@@ -283,46 +272,57 @@ misclassification_rate_train_QDA
 # cat("overall error rate:", overall_error_rate_qdatrain)
 ```
 
-
 # Rylan KNN
 
 ```{r}
-set.seed(1)
+set.seed(70)
+
+admission <- read.csv("admission.csv")
+admission$De <- as.factor(admission$De)
+
+admission_train <- anti_join(admission, admission_test)
 
 train_X <- as.matrix(admission_train[, c('GPA', 'GMAT')])
 train_X <- scale(train_X)
 train_Y <- admission_train$De
 
-# When scaling test set, use parameters (mean and sd) from train set
-train_means <- attr(train_X, "scaled:center")
-train_sds <- attr(train_X, "scaled:scale")
 test_X <- as.matrix(admission_test[, c('GPA', 'GMAT')])
-test_X <- scale(test_X, center = train_means, scale = train_sds)
+test_X <- scale(test_X)
 test_Y <- admission_test$De
 
-
-calc_knn_error <- function(k, is_train_data) {
-  if(is_train_data) {
-    knn_train_out <- knn(train_X, train_X, train_Y, k=k, prob=T)
-    return(1 - mean(train_Y == knn_train_out))
-  }
-  else {
-    knn_test_out <- knn(train_X, test_X, train_Y, k=k)
-    return(1 - mean(test_Y == knn_test_out))
-  }
+# Calculates error and predictions (can use on either train
+# or test data, in case we want to plot train and test error rates together)
+calc_knn_error <- function(num_neighbors, train_obs, test_obs, train_labels, 
+                           test_labels){
+  knn_model <- knn3(train_obs, train_labels, k = num_neighbors)
+  knn_pred <- predict(knn_model, test_obs, type = "class")  
+  err <- 1 - mean(test_labels == knn_pred)
+  return(err)
 }
 
-test_error_rates <- sapply(1:nrow(admission_train), calc_knn_error, 
-                           is_train_data=F)
-plot(test_error_rates)
+test_error_rates <- numeric(nrow(admission_train))
+for (i in 1:nrow(admission_train)) {
+  test_error_rates[i] <- calc_knn_error(num_neighbors=i, train_obs = train_X, 
+                           test_obs=test_X, train_labels=train_Y, 
+                           test_labels=test_Y)
+}
 
+plot(test_error_rates)
 optimal_k <- which.min(test_error_rates)
 
-# Train predictions
-knn_train_out <- knn(train_X, train_X, train_Y, k=optimal_k, prob=T)
+# Train k-NN model with optimal k
+knn_model <- knn3(train_X, train_Y, k = optimal_k)
+
+# Get predicted class probabilities
+knn_train_probs <- predict(knn_model, train_X, type = "prob")
+knn_test_probs <- predict(knn_model, test_X, type = "prob")
+
+# Get predicted class labels
+knn_train_out <- predict(knn_model, train_X, type = "class")
+knn_test_out <- predict(knn_model, test_X, type = "class")
 
 # Automate extraction of performance metrics and confusion matrix
-get_perf_metrics <- function(pred, ground_truth){
+get_perf_metrics <- function(probs, pred, ground_truth){
   cm <- table(True_Status=ground_truth, Predicted_Status=pred)
   # Use this to get sensitivities and specificities
   cm <- confusionMatrix(cm, positive="1")
@@ -334,43 +334,34 @@ get_perf_metrics <- function(pred, ground_truth){
   mean_spec <- mean(specificities)
   
   # Calculate the AUC
-  probs <- as.numeric(attributes(pred)$prob)
   auc <- multiclass.roc(ground_truth, probs)$auc
   
-  # Put the results into a table with labeled column names
-  result_matrix <- matrix(c(sensitivities, mean_sens, 
-                            specificities, mean_spec, 
-                            overall_accuracy, overall_error_rate, 
-                            auc), 
-                          nrow = 1, byrow = TRUE)
+  # Put the results into a table
+  result_vector <- c(sensitivities, mean_sens, 
+                     specificities, mean_spec, 
+                     overall_accuracy, overall_error_rate, 
+                     auc)
   
-  colnames(result_matrix) <- c(paste0(names(sensitivities), " Sensitivity"),
-                               "Mean Sensitivity",
-                               paste0(names(specificities), " Specificity"),
-                               "Mean Specificity",
-                               "Overall Accuracy", 
-                               "Overall Error Rate", 
-                               "AUC")
+  row_names <- c(paste0(names(sensitivities), " Sensitivity"),
+                 "Mean Sensitivity",
+                 paste0(names(specificities), " Specificity"),
+                 "Mean Specificity",
+                 "Overall Accuracy", 
+                 "Overall Error Rate", 
+                 "AUC")
+  
+  result_df <- data.frame(Metric = row_names, Value = result_vector)
   
   # Return confusion matrix and results table as list
-  results <- list(Confusion_Matrix=cm$table, Metrics=result_matrix)
+  results <- list(Confusion_Matrix=cm$table, Metrics=result_df)
   return(results)
 }
 
 # Train Performance Metrics 
-train_metrics <- get_perf_metrics(knn_train_out, train_Y)
+train_metrics <- get_perf_metrics(knn_train_probs, knn_train_out, train_Y)
 train_metrics
 
-# Test Predictions
-knn_test_out <- knn(train_X, test_X, train_Y, k=optimal_k, prob=T)
-
 # Test Performance Metrics
-test_metrics <- get_perf_metrics(knn_test_out, test_Y)
+test_metrics <- get_perf_metrics(knn_test_probs, knn_test_out, test_Y)
 test_metrics
-
 ```
-
-
-
-
-
