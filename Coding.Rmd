@@ -85,19 +85,87 @@ ggarrange(gmat_density, gpa_density, ncol=2, nrow=1,
 print(names(train_preds))
 ```
 
-#Jocelyn #sorry i am not finished yet #please change anything you see wrong or can be improved, thanks
+#Jocelyn # lda decision boundaries, lda confusion matrices # qda decision boundaries, qda confusion matrices
 
 ```{r}
 #b)
 
+##### plot LDA desicion boundary line
+GPA_range <- seq(min(admission_train$GPA) - 1, max(admission_train$GPA) + 1, length.out = 500)
+GMAT_range <- seq(min(admission_train$GMAT) - 1, max(admission_train$GMAT) + 1, length.out = 500)
+grid <- expand.grid(GPA = GPA_range, GMAT = GMAT_range)
+
+# Predict the class probabilities for the grid points
+grid$De <- predict(lda_model, newdata = grid)$class
+
+# Create numeric labels for the class (1 = admit, 2 = notadmit, 3 = border)
+grid$De_num <- as.numeric(factor(grid$De, levels = c("admit", "notadmit", "border")))
 
 
+#LDA desicion boundary line on training data
+lda_plot_train <- ggplot(data = admission_train, aes(x = GPA, y = GMAT, 
+                                                     color = De)) +
+  geom_point() +
+  # geom_raster for smooth background # alpha = 0.1 for transparent background
+  geom_raster(data = grid, aes(x = GPA, y = GMAT, fill = De), alpha = 0.1) +  
+  # Point colors
+  scale_color_manual("Admission Status", 
+                     values = c("admit" = "green",
+                                "notadmit" = "red", "border" = "orange"),
+                     labels = c("admit" = "Admit","border" = "Borderline",
+                                "notadmit" = "Do Not Admit")) +
+  # Background colors
+  scale_fill_manual("Classification",
+                    values = c("admit" = "green",
+                               "notadmit" = "red", "border" = "orange"), 
+                    labels = c("admit" = "Admit", "border" = "Borderline",
+                               "notadmit" = "Do Not Admit")) +
+  theme_minimal() +
+  # Remove grid lines
+  theme(panel.grid = element_blank(), 
+        # Center the title
+        plot.title = element_text(hjust = 0.5)) +  
+  labs(title = "LDA Decision Boundary Lines on Training Data") +
+  # Add decision boundary lines
+  geom_contour(data = grid, aes(x = GPA, y = GMAT, z = De_num), 
+               color = "black", size = 0.2)
+  
+
+#LDA desicion boundary line on test data
+lda_plot_test <- ggplot(data = admission_test, aes(x = GPA, y = GMAT, 
+                                                   color = De)) +
+  geom_point() +
+  # geom_raster for smooth background # alpha = 0.1 for transparent background
+  geom_raster(data = grid, aes(x = GPA, y = GMAT, fill = De), alpha = 0.1) +  
+  # Point colors
+  scale_color_manual("Admission Status", 
+                     values = c("admit" = "green",
+                                "notadmit" = "red", "border" = "orange"),
+                     labels = c("admit" = "Admit", "border" = "Borderline",
+                                "notadmit" = "Do Not Admit")) +
+  # Background colors
+  scale_fill_manual("Classification",
+                    values = c("admit" = "green",
+                               "notadmit" = "red", "border" = "orange"), 
+                    labels = c("admit" = "Admit", "border" = "Borderline",
+                               "notadmit" = "Do Not Admit")) +
+  theme_minimal() +
+  # Remove grid lines
+  theme(panel.grid = element_blank(), 
+        # Center the title
+        plot.title = element_text(hjust = 0.5)) +  
+  labs(title = "LDA Decision Boundary Lines on Test Data") +
+  # Add decision boundary lines
+  geom_contour(data = grid, aes(x = GPA, y = GMAT, z = De_num), 
+               color = "black", size = 0.2)
+
+
+lda_plot_train
+lda_plot_test
 
 
 #Linear Discriminant Analysis on Training Data
-vector <- c(-c(28,29,30,31,56,57,58,59,82,83,84,85))
-#eliminates last 4 observations of each of the 3 groups
-lda_model <- lda(De ~ GMAT + GPA, data=admission, subset = vector)
+lda_model <- lda(De ~ GPA + GMAT, data=admission_train)
 #LDA with training data
 
 lda_test_pred <- predict(lda_model, admission_test)
@@ -123,14 +191,85 @@ misclassification_rate_train_LDA
 #Overall LDA misclassification rate for Training Data
 
 
-##### plot LDA desicion boundary line
 
 
 
 #c)
 
+##### plot QDA desicion boundary line
+grid2 <- expand.grid(GPA = GPA_range, GMAT = GMAT_range)
+
+# Predict the class probabilities for the grid points
+grid2$De <- predict(qda_model, newdata = grid2)$class
+
+# Create numeric labels for the class (1 = admit, 2 = notadmit, 3 = border)
+grid2$De_num <- as.numeric(factor(grid2$De, levels = c("admit", "notadmit", "border")))
+
+
+# QDA desicion boundary line on training data
+qda_plot_train <- ggplot(data = admission_train, aes(x = GPA, y = GMAT,
+                                                     color = De)) +
+  geom_point() +
+  # geom_raster for smooth background # alpha = 0.1 for transparent background
+  geom_raster(data = grid2, aes(x = GPA, y = GMAT, fill = De), alpha = 0.1) +  
+  # Point colors
+  scale_color_manual("Admission Status", 
+                     values = c("admit" = "green",
+                                "notadmit" = "red", "border" = "orange"),
+                     labels = c("admit" = "Admit", "border" = "Borderline",
+                                "notadmit" = "Do Not Admit")) +
+  # Background colors
+  scale_fill_manual("Classification",
+                    values = c("admit" = "green",
+                               "notadmit" = "red", "border" = "orange"), 
+                    labels = c("admit" = "Admit", "border" = "Borderline",
+                               "notadmit" = "Do Not Admit")) +
+  theme_minimal() +
+  # Remove grid lines
+  theme(panel.grid = element_blank(), 
+        # Center the title
+        plot.title = element_text(hjust = 0.5)) +  
+  labs(title = "QDA Decision Boundary Lines on Training Data") +
+  # Add decision boundary lines
+  geom_contour(data = grid2, aes(x = GPA, y = GMAT, z = De_num), 
+               color = "black", size = 0.2)
+
+
+# QDA desicion boundary line on test data
+qda_plot_test <- ggplot(data = admission_test, aes(x = GPA, y = GMAT,
+                                                   color = De)) +
+  geom_point() +
+  # geom_raster for smooth background # alpha = 0.1 for transparent background
+  geom_raster(data = grid2, aes(x = GPA, y = GMAT, fill = De), alpha = 0.1) +  
+  # Point colors
+  scale_color_manual("Admission Status", 
+                     values = c("admit" = "green",
+                                "notadmit" = "red", "border" = "orange"),
+                     labels = c("admit" = "Admit", "border" = "Borderline",
+                                "notadmit" = "Do Not Admit")) +
+  # Background colors
+  scale_fill_manual("Classification",
+                    values = c("admit" = "green",
+                               "notadmit" = "red", "border" = "orange"), 
+                    labels = c("admit" = "Admit", "border" = "Borderline",
+                               "notadmit" = "Do Not Admit")) +
+  theme_minimal() +
+  # Remove grid lines
+  theme(panel.grid = element_blank(), 
+        # Center the title
+        plot.title = element_text(hjust = 0.5)) +  
+  labs(title = "QDA Decision Boundary Lines on Test Data") +
+  # Add decision boundary lines
+  geom_contour(data = grid2, aes(x = GPA, y = GMAT, z = De_num), 
+               color = "black", size = 0.2)
+
+
+qda_plot_train
+qda_plot_test
+
+
 #Quadratic Discriminant Analysis on Training data
-qda_model <- qda(De ~ GMAT + GPA, data=admission, subset = vector)
+qda_model <- qda(De ~ GPA + GMAT, data=admission_train)
 #QDA with training data
 
 qda_test_pred <- predict(qda_model, admission_test)
@@ -153,8 +292,6 @@ misclassification_rate_train_QDA <- 1 - Fraction_correct_train_predictions_QDA
 misclassification_rate_train_QDA
 #Overall QDA misclassification rate for Training Data
 
-
-##### plot QDA desicion boundary line
 
 ```
 
