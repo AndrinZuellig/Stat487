@@ -503,4 +503,19 @@ train_metrics
 # Test Performance Metrics
 test_metrics <- get_perf_metrics(knn_test_probs, knn_test_out, test_Y)
 test_metrics
+
+
+combined <- train_metrics$Metrics %>% inner_join(test_metrics$Metric, by = "Metric") %>%
+  rename("Train" = Value.x, "Test" = Value.y) 
+View(combined)
+
+
 ```
+
+
+
+
+
+
+
+
