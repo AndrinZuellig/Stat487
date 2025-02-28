@@ -85,37 +85,116 @@ ggarrange(gmat_density, gpa_density, ncol=2, nrow=1,
 print(names(train_preds))
 ```
 
-#Jocelyn # lda decision boundaries, lda confusion matrices # qda decision boundaries, qda confusion matrices
+# Kira lda and qda code, confusion matrices, sensitivity, specificity, overall error rate, and AUC
+
+```{r}
+# lda with test data
+
+lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
+lda.pred_test <- predict(lda.fit, admission_test)
+lda.class_test <- lda.pred_test$class
+
+lda.probs_test <- lda.pred_test$posterior # probabilities for each class
+# defining admission_test$De as lda.ground_truth_test for clarity
+lda.ground_truth_test <- admission_test$De
+
+# automate extraction of performance metrics and confusion matrix
+get_perf_metrics <- function(probs, pred, ground_truth){
+  cm <- table(True_Status=ground_truth, Predicted_Status=pred)
+  # use this to get sensitivities and specificities
+  cm <- confusionMatrix(cm, positive="1")
+  sensitivities <- cm$byClass[,"Sensitivity"]
+  specificities <- cm$byClass[,"Specificity"]
+  overall_accuracy <- cm$overall["Accuracy"]
+  overall_error_rate <- 1 - overall_accuracy
+  mean_sens <- mean(sensitivities)
+  mean_spec <- mean(specificities)
+  
+  # calculate the AUC
+  auc <- multiclass.roc(ground_truth, probs)$auc
+  
+  # put the results into a table
+  result_vector <- c(sensitivities, mean_sens, 
+                     specificities, mean_spec, 
+                     overall_accuracy, overall_error_rate, 
+                     auc)
+  
+  row_names <- c(paste0(names(sensitivities), " Sensitivity"),
+                 "Mean Sensitivity",
+                 paste0(names(specificities), " Specificity"),
+                 "Mean Specificity",
+                 "Overall Accuracy", 
+                 "Overall Error Rate", 
+                 "AUC")
+  
+  result_df <- data.frame(Metric = row_names, Value = result_vector)
+  
+  # return confusion matrix and results table as list
+  results <- list(Confusion_Matrix=cm$table, Metrics=result_df)
+  return(results)
+}
+
+cat("LDA with Test Data: \n\n")
+
+get_perf_metrics(lda.probs_test, lda.class_test, lda.ground_truth_test)
+```
+
+
+```{r}
+# lda with training data
+lda.pred_train <- predict(lda.fit, admission_train)
+lda.class_train <- lda.pred_train$class
+
+lda.probs_train <- lda.pred_train$posterior # probabilities for each class
+
+# defining admission_train$De as lda.ground_truth_train for clarity
+lda.ground_truth_train <- admission_train$De
+
+
+cat("LDA with Training Data: \n\n")
+
+get_perf_metrics(lda.probs_train, lda.class_train, lda.ground_truth_train)
+```
+
+
+```{r}
+# qda with test data
+qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
+qda.pred_test <- predict(qda.fit, admission_test)
+qda.class_test <- qda.pred_test$class
+
+qda.probs_test <- qda.pred_test$posterior # probabilities for each class
+# defining admission_test$De as qda.ground_truth_test for clarity
+qda.ground_truth_test <- admission_test$De
+
+
+cat("QDA with Test Data: \n\n")
+
+get_perf_metrics(qda.probs_test, qda.class_test, qda.ground_truth_test)
+```
+
+
+```{r}
+# qda with training data
+qda.pred_train <- predict(qda.fit, admission_train)
+qda.class_train <- qda.pred_train$class
+
+qda.probs_train <- qda.pred_train$posterior # probabilities for each class
+
+# defining admission_train$De as qda.ground_truth_train for clarity
+qda.ground_truth_train <- admission_train$De
+
+
+cat("QDA with Training Data: \n\n")
+
+get_perf_metrics(qda.probs_train, qda.class_train, qda.ground_truth_train)
+```
+
+
+#Jocelyn # lda decision boundaries # qda decision boundaries
 
 ```{r}
 #b)
-
-#Linear Discriminant Analysis on Training Data
-lda_model <- lda(De ~ GPA + GMAT, data=admission_train)
-#LDA with training data
-
-lda_test_pred <- predict(lda_model, admission_test)
-lda_test_class <- lda_test_pred$class
-De_test <-admission_test$De
-table(lda_test_class, De_test)
-#LDA Confusion Table for Test Data
-
-Fraction_correct_test_predictions <- mean(lda_test_class == De_test)
-misclassification_rate_test_LDA <- 1 - Fraction_correct_test_predictions
-misclassification_rate_test_LDA
-#Overall LDA misclassification rate for Test Data
-
-lda_train_pred <- predict(lda_model, admission_train)
-lda_train_class <- lda_train_pred$class
-De_train <- admission_train$De
-table(lda_train_class, De_train)
-#LDA Confusion Table for Training Data
-
-Fraction_correct_train_predictions <- mean(lda_train_class == De_train)
-misclassification_rate_train_LDA <- 1 - Fraction_correct_train_predictions
-misclassification_rate_train_LDA
-#Overall LDA misclassification rate for Training Data
-
 
 
 ##### plot LDA desicion boundary line
@@ -124,7 +203,7 @@ GMAT_range <- seq(min(admission_train$GMAT) - 1, max(admission_train$GMAT) + 1, 
 grid <- expand.grid(GPA = GPA_range, GMAT = GMAT_range)
 
 # Predict the class probabilities for the grid points
-grid$De <- predict(lda_model, newdata = grid)$class
+grid$De <- predict(lda.fit, newdata = grid)$class
 
 # Create numeric labels for the class (1 = admit, 2 = notadmit, 3 = border)
 grid$De_num <- as.numeric(factor(grid$De, levels = c("admit", "notadmit", "border")))
@@ -196,37 +275,12 @@ lda_plot_test
 
 #c)
 
-#Quadratic Discriminant Analysis on Training data
-qda_model <- qda(De ~ GPA + GMAT, data=admission_train)
-#QDA with training data
-
-qda_test_pred <- predict(qda_model, admission_test)
-qda_test_class <- qda_test_pred$class
-table(qda_test_class, De_test) 
-#QDA Confusion Table for Test Data
-
-Fraction_correct_test_predictions_QDA <- mean(qda_test_class == De_test)
-misclassification_rate_test_QDA <- 1 - Fraction_correct_test_predictions_QDA
-misclassification_rate_test_QDA
-#Overall QDA misclassification rate for Test Data
-
-qda_train_pred <- predict(qda_model, admission_train)
-qda_train_class <- qda_train_pred$class
-table(qda_train_class, De_train)
-#QDA Confusion Table for Training Data
-
-Fraction_correct_train_predictions_QDA <- mean(qda_train_class == De_train)
-misclassification_rate_train_QDA <- 1 - Fraction_correct_train_predictions_QDA
-misclassification_rate_train_QDA
-#Overall QDA misclassification rate for Training Data
-
-
 
 ##### plot QDA desicion boundary line
 grid2 <- expand.grid(GPA = GPA_range, GMAT = GMAT_range)
 
 # Predict the class probabilities for the grid points
-grid2$De <- predict(qda_model, newdata = grid2)$class
+grid2$De <- predict(qda.fit, newdata = grid2)$class
 
 # Create numeric labels for the class (1 = admit, 2 = notadmit, 3 = border)
 grid2$De_num <- as.numeric(factor(grid2$De, levels = c("admit", "notadmit", "border")))
@@ -297,119 +351,6 @@ qda_plot_test
 
 ```
 
-# Kira lda and qda (I commented out my code because Jocelyn has similar code, and I don't want it to cause any problems when running the code)
-
-```{r}
-# # lda with test data
-# lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
-# 
-# lda.pred_test <- predict(lda.fit, admission_test)
-# lda.class_test <- lda.pred_test$class
-# 
-# # confusion matrix
-# conf_matrix_ldatest <- confusionMatrix(admission_test$De, lda.class_test)
-# conf_matrix_ldatest
-# 
-# # str(conf_matrix_ldatest) look at this to do some of the steps below
-# 
-# #extracting sensitivities, specificities, and overall accuracy
-# sensitivities_ldatest <- conf_matrix_ldatest$byClass[,"Sensitivity"]
-# specificities_ldatest <- conf_matrix_ldatest$byClass[,"Specificity"]
-# 
-# overall_accuracy_ldatest <- conf_matrix_ldatest$overall["Accuracy"]
-# 
-# # the overall error rate is 1 - overall accuracy
-# overall_error_rate_ldatest <- 1 - overall_accuracy_ldatest
-# 
-# cat("sensitivity for each class:", sensitivities_ldatest, "\n")
-# cat("specificity for each class:", specificities_ldatest, "\n")
-# 
-# cat("avg of the sensitivities:", mean(sensitivities_ldatest), "\n")
-# cat("avg of the specificities:", mean(specificities_ldatest), "\n")
-# cat("overall error rate:", overall_error_rate_ldatest)
-```
-
-```{r}
-# # lda with training data
-# lda.pred_train <- predict(lda.fit, admission_train)
-# lda.class_train <- lda.pred_train$class
-# 
-# # confusion matrix
-# conf_matrix_ldatrain <- confusionMatrix(admission_train$De, lda.class_train)
-# conf_matrix_ldatrain
-# 
-# # extracting sensitivities, specificities, and overall accuracy
-# sensitivities_ldatrain <- conf_matrix_ldatrain$byClass[,"Sensitivity"]
-# specificities_ldatrain <- conf_matrix_ldatrain$byClass[,"Specificity"]
-# 
-# overall_accuracy_ldatrain <- conf_matrix_ldatrain$overall["Accuracy"]
-# 
-# # the overall error rate is 1 - overall accuracy
-# overall_error_rate_ldatrain <- 1 - overall_accuracy_ldatrain
-# 
-# cat("sensitivity for each class:", sensitivities_ldatrain, "\n")
-# cat("specificity for each class:", specificities_ldatrain, "\n")
-# 
-# cat("avg of the sensitivities:", mean(sensitivities_ldatrain), "\n")
-# cat("avg of the specificities:", mean(specificities_ldatrain), "\n")
-# cat("overall error rate:", overall_error_rate_ldatrain)
-```
-
-```{r}
-# # qda with test data
-# qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
-# 
-# qda.pred_test <- predict(qda.fit, admission_test)
-# qda.class_test <- qda.pred_test$class
-# 
-# # confusion matrix
-# conf_matrix_qdatest <- confusionMatrix(admission_test$De, qda.class_test)
-# conf_matrix_qdatest
-# 
-# # str(conf_matrix_qdatest) look at this to do some of the steps below
-# 
-# # extracting sensitivities, specificities, and overall accuracy
-# sensitivities_qdatest <- conf_matrix_qdatest$byClass[,"Sensitivity"]
-# specificities_qdatest <- conf_matrix_qdatest$byClass[,"Specificity"]
-# 
-# overall_accuracy_qdatest <- conf_matrix_qdatest$overall["Accuracy"]
-# 
-# # the overall error rate is 1 - overall accuracy
-# overall_error_rate_qdatest <- 1 - overall_accuracy_qdatest
-# 
-# cat("sensitivity for each class:", sensitivities_qdatest, "\n")
-# cat("specificity for each class:", specificities_qdatest, "\n")
-# 
-# cat("avg of the sensitivities:", mean(sensitivities_qdatest), "\n")
-# cat("avg of the specificities:", mean(specificities_qdatest), "\n")
-# cat("overall error rate:", overall_error_rate_qdatest)
-```
-
-```{r}
-# # qda with training data
-# qda.pred_train <- predict(qda.fit, admission_train)
-# qda.class_train <- qda.pred_train$class
-# 
-# # confusion matrix
-# conf_matrix_qdatrain <- confusionMatrix(admission_train$De, qda.class_train)
-# conf_matrix_qdatrain
-# 
-# # extracting sensitivities, specificities, and overall accuracy
-# sensitivities_qdatrain <- conf_matrix_qdatrain$byClass[,"Sensitivity"]
-# specificities_qdatrain <- conf_matrix_qdatrain$byClass[,"Specificity"]
-# 
-# overall_accuracy_qdatrain <- conf_matrix_qdatrain$overall["Accuracy"]
-# 
-# # the overall error rate is 1 - overall accuracy
-# overall_error_rate_qdatrain <- 1 - overall_accuracy_qdatrain
-# 
-# cat("sensitivity for each class:", sensitivities_qdatrain, "\n")
-# cat("specificity for each class:", specificities_qdatrain, "\n")
-# 
-# cat("avg of the sensitivities:", mean(sensitivities_qdatrain), "\n")
-# cat("avg of the specificities:", mean(specificities_qdatrain), "\n")
-# cat("overall error rate:", overall_error_rate_qdatrain)
-```
 
 # Rylan KNN
 
