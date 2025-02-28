@@ -98,11 +98,10 @@ lda.probs_test <- lda.pred_test$posterior # probabilities for each class
 # defining admission_test$De as lda.ground_truth_test for clarity
 lda.ground_truth_test <- admission_test$De
 
-# automate extraction of performance metrics and confusion matrix
+# Automate extraction of performance metrics and confusion matrix
 get_perf_metrics <- function(probs, pred, ground_truth){
-  cm <- table(True_Status=ground_truth, Predicted_Status=pred)
-  # use this to get sensitivities and specificities
-  cm <- confusionMatrix(cm, positive="1")
+  # Use this to get sensitivities and specificities
+  cm <- confusionMatrix(data=pred, reference=ground_truth, positive="1")
   sensitivities <- cm$byClass[,"Sensitivity"]
   specificities <- cm$byClass[,"Specificity"]
   overall_accuracy <- cm$overall["Accuracy"]
@@ -110,10 +109,10 @@ get_perf_metrics <- function(probs, pred, ground_truth){
   mean_sens <- mean(sensitivities)
   mean_spec <- mean(specificities)
   
-  # calculate the AUC
+  # Calculate the AUC
   auc <- multiclass.roc(ground_truth, probs)$auc
   
-  # put the results into a table
+  # Put the results into a table
   result_vector <- c(sensitivities, mean_sens, 
                      specificities, mean_spec, 
                      overall_accuracy, overall_error_rate, 
@@ -129,7 +128,7 @@ get_perf_metrics <- function(probs, pred, ground_truth){
   
   result_df <- data.frame(Metric = row_names, Value = result_vector)
   
-  # return confusion matrix and results table as list
+  # Return confusion matrix and results table as list
   results <- list(Confusion_Matrix=cm$table, Metrics=result_df)
   return(results)
 }
@@ -138,7 +137,6 @@ cat("LDA with Test Data: \n\n")
 
 get_perf_metrics(lda.probs_test, lda.class_test, lda.ground_truth_test)
 ```
-
 
 ```{r}
 # lda with training data
@@ -156,7 +154,6 @@ cat("LDA with Training Data: \n\n")
 get_perf_metrics(lda.probs_train, lda.class_train, lda.ground_truth_train)
 ```
 
-
 ```{r}
 # qda with test data
 qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
@@ -172,7 +169,6 @@ cat("QDA with Test Data: \n\n")
 
 get_perf_metrics(qda.probs_test, qda.class_test, qda.ground_truth_test)
 ```
-
 
 ```{r}
 # qda with training data
@@ -190,8 +186,7 @@ cat("QDA with Training Data: \n\n")
 get_perf_metrics(qda.probs_train, qda.class_train, qda.ground_truth_train)
 ```
 
-
-#Jocelyn # lda decision boundaries # qda decision boundaries
+#Jocelyn \# lda decision boundaries \# qda decision boundaries
 
 ```{r}
 #b)
@@ -351,7 +346,6 @@ qda_plot_test
 
 ```
 
-
 # Rylan KNN
 
 ```{r}
@@ -401,42 +395,6 @@ knn_test_probs <- predict(knn_model, test_X, type = "prob")
 knn_train_out <- predict(knn_model, train_X, type = "class")
 knn_test_out <- predict(knn_model, test_X, type = "class")
 
-# Automate extraction of performance metrics and confusion matrix
-get_perf_metrics <- function(probs, pred, ground_truth){
-  cm <- table(True_Status=ground_truth, Predicted_Status=pred)
-  # Use this to get sensitivities and specificities
-  cm <- confusionMatrix(cm, positive="1")
-  sensitivities <- cm$byClass[,"Sensitivity"]
-  specificities <- cm$byClass[,"Specificity"]
-  overall_accuracy <- cm$overall["Accuracy"]
-  overall_error_rate <- 1 - overall_accuracy
-  mean_sens <- mean(sensitivities)
-  mean_spec <- mean(specificities)
-  
-  # Calculate the AUC
-  auc <- multiclass.roc(ground_truth, probs)$auc
-  
-  # Put the results into a table
-  result_vector <- c(sensitivities, mean_sens, 
-                     specificities, mean_spec, 
-                     overall_accuracy, overall_error_rate, 
-                     auc)
-  
-  row_names <- c(paste0(names(sensitivities), " Sensitivity"),
-                 "Mean Sensitivity",
-                 paste0(names(specificities), " Specificity"),
-                 "Mean Specificity",
-                 "Overall Accuracy", 
-                 "Overall Error Rate", 
-                 "AUC")
-  
-  result_df <- data.frame(Metric = row_names, Value = result_vector)
-  
-  # Return confusion matrix and results table as list
-  results <- list(Confusion_Matrix=cm$table, Metrics=result_df)
-  return(results)
-}
-
 # Train Performance Metrics 
 train_metrics <- get_perf_metrics(knn_train_probs, knn_train_out, train_Y)
 train_metrics
@@ -452,11 +410,3 @@ View(combined)
 
 
 ```
-
-
-
-
-
-
-
-
