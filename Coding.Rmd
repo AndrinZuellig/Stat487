@@ -88,15 +88,14 @@ print(names(train_preds))
 # Kira lda and qda code, confusion matrices, sensitivity, specificity, overall error rate, and AUC
 
 ```{r}
-# lda with test data
+# lda with training data
+lda.pred_train <- predict(lda.fit, admission_train)
+lda.class_train <- lda.pred_train$class
 
-lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
-lda.pred_test <- predict(lda.fit, admission_test)
-lda.class_test <- lda.pred_test$class
+lda.probs_train <- lda.pred_train$posterior # probabilities for each class
 
-lda.probs_test <- lda.pred_test$posterior # probabilities for each class
-# defining admission_test$De as lda.ground_truth_test for clarity
-lda.ground_truth_test <- admission_test$De
+# defining admission_train$De as lda.ground_truth_train for clarity
+lda.ground_truth_train <- admission_train$De
 
 # Automate extraction of performance metrics and confusion matrix
 get_perf_metrics <- function(probs, pred, ground_truth){
@@ -133,41 +132,26 @@ get_perf_metrics <- function(probs, pred, ground_truth){
   return(results)
 }
 
-cat("LDA with Test Data: \n\n")
-
-get_perf_metrics(lda.probs_test, lda.class_test, lda.ground_truth_test)
-```
-
-```{r}
-# lda with training data
-lda.pred_train <- predict(lda.fit, admission_train)
-lda.class_train <- lda.pred_train$class
-
-lda.probs_train <- lda.pred_train$posterior # probabilities for each class
-
-# defining admission_train$De as lda.ground_truth_train for clarity
-lda.ground_truth_train <- admission_train$De
-
-
 cat("LDA with Training Data: \n\n")
 
 get_perf_metrics(lda.probs_train, lda.class_train, lda.ground_truth_train)
 ```
 
+
 ```{r}
-# qda with test data
-qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
-qda.pred_test <- predict(qda.fit, admission_test)
-qda.class_test <- qda.pred_test$class
+# lda with test data
 
-qda.probs_test <- qda.pred_test$posterior # probabilities for each class
-# defining admission_test$De as qda.ground_truth_test for clarity
-qda.ground_truth_test <- admission_test$De
+lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
+lda.pred_test <- predict(lda.fit, admission_test)
+lda.class_test <- lda.pred_test$class
 
+lda.probs_test <- lda.pred_test$posterior # probabilities for each class
+# defining admission_test$De as lda.ground_truth_test for clarity
+lda.ground_truth_test <- admission_test$De
 
-cat("QDA with Test Data: \n\n")
+cat("LDA with Test Data: \n\n")
 
-get_perf_metrics(qda.probs_test, qda.class_test, qda.ground_truth_test)
+get_perf_metrics(lda.probs_test, lda.class_test, lda.ground_truth_test)
 ```
 
 ```{r}
@@ -185,6 +169,24 @@ cat("QDA with Training Data: \n\n")
 
 get_perf_metrics(qda.probs_train, qda.class_train, qda.ground_truth_train)
 ```
+
+
+```{r}
+# qda with test data
+qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
+qda.pred_test <- predict(qda.fit, admission_test)
+qda.class_test <- qda.pred_test$class
+
+qda.probs_test <- qda.pred_test$posterior # probabilities for each class
+# defining admission_test$De as qda.ground_truth_test for clarity
+qda.ground_truth_test <- admission_test$De
+
+
+cat("QDA with Test Data: \n\n")
+
+get_perf_metrics(qda.probs_test, qda.class_test, qda.ground_truth_test)
+```
+
 
 #Jocelyn \# lda decision boundaries \# qda decision boundaries
 
