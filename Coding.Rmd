@@ -420,3 +420,46 @@ View(combined)
 
 
 ```
+
+```{r}
+View(admission)
+```
+
+
+KNN boundaries
+
+```{r}
+
+
+gpa_mean <- mean(admission$GPA)
+gpa_sd   <- sd(admission$GPA)
+gmat_mean <- mean(admission$GMAT)
+gmat_sd   <- sd(admission$GMAT)
+
+admission_scaled <- admission
+admission_scaled$GPA  <- (admission$GPA - gpa_mean) / gpa_sd
+admission_scaled$GMAT <- (admission$GMAT - gmat_mean) / gmat_sd
+
+x1_range <- seq(min(admission$GPA) - 1, max(admission$GPA) + 1, length.out = 200)
+x2_range <- seq(min(admission$GMAT) - 1, max(admission$GMAT) + 1, length.out = 200)
+x1_range_scaled <- (x1_range - gpa_mean) / gpa_sd
+x2_range_scaled <- (x2_range - gmat_mean) / gmat_sd
+grid <- expand.grid(x.1 = x1_range_scaled, x.2 = x2_range_scaled)
+
+
+library(class)
+grid_pred <- knn(train = admission_scaled[, c("GPA", "GMAT")],
+                 test  = grid,
+                 cl    = admission_scaled$De,
+                 k     = 3)
+grid$pred <- grid_pred
+
+library(ggplot2)
+ggplot() +
+  geom_point(data = grid, aes(x = x.1, y = x.2, color = pred), alpha = 0.1, size = 0.5) +
+  geom_point(data = admission_scaled, aes(x = GPA, y = GMAT, color = De), alpha = 0.4) +
+  labs(title = "Decision Boundary for K = 3 (Scaled Values)",
+       x = "GPA (scaled)", y = "GMAT (scaled)")
+
+```
+
