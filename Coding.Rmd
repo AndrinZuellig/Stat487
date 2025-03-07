@@ -480,7 +480,7 @@ ggplot() +
   scale_y_continuous(expand=c(0, 0)) +
   labs(x = "Standardized GPA", y = "Standardized GMAT") +
   theme_minimal() +
-  theme(panel.grid = element_blank()) 
+  theme(panel.grid = element_blank(), text = element_text(size=13)) 
 
 
 # For test set 
@@ -501,5 +501,5 @@ ggplot() +
   scale_y_continuous(expand=c(0, 0)) +
   labs(x = "Standardized GPA", y = "Standardized GMAT") +
   theme_minimal() +
-  theme(panel.grid = element_blank()) 
+  theme(panel.grid = element_blank(), text = element_text(size=13)) 
 ```
