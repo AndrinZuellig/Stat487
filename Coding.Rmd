@@ -454,6 +454,14 @@ ggplot() +
 Rylan KNN Boundaries
 
 ```{r}
+# Decision Boundaries
+grid_width <- 200
+x1_grid <- seq(min(train_X[, 1]) - 0.5, max(train_X[, 1]) + 0.5, l=grid_width)
+x2_grid <- seq(min(train_X[, 2]) - 0.5, max(train_X[, 2]) + 0.5, l=grid_width)
+grid <- expand.grid(x1=x1_grid, x2=x2_grid)
+
+grid$pred <- predict(knn_model, grid, type='class')
+
 # For train set 
 ggplot() + 
   geom_raster(data=grid, aes(x=x1, y=x2, fill=pred), alpha=0.3) +
@@ -470,9 +478,9 @@ ggplot() +
                                "notadmit" = "Do Not Admit")) +
   scale_x_continuous(expand=c(0, 0)) +
   scale_y_continuous(expand=c(0, 0)) +
-  theme(panel.grid = element_blank()) + 
   labs(x = "Standardized GPA", y = "Standardized GMAT") +
-  theme_bw()
+  theme_bw() +
+  theme(panel.grid = element_blank()) 
 
 
 # For test set 
@@ -491,8 +499,7 @@ ggplot() +
                                "notadmit" = "Do Not Admit")) +
   scale_x_continuous(expand=c(0, 0)) +
   scale_y_continuous(expand=c(0, 0)) +
-  theme(panel.grid = element_blank()) + 
   labs(x = "Standardized GPA", y = "Standardized GMAT") +
-  theme_bw()
-
+  theme_bw() +
+  theme(panel.grid = element_blank()) 
 ```
