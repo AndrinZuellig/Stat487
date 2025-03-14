@@ -219,11 +219,7 @@ lda_plot_train <- ggplot(data = admission_train, aes(x = GPA, y = GMAT,
                                "notadmit" = "Do Not Admit")) +
   theme_minimal() +
   # Remove grid lines
-  theme(panel.grid = element_blank(), 
-        # Center the title
-        plot.title = element_text(hjust = 0.5)) +  
-  # Title and Axes
-  labs(title = "LDA Decision Boundary Lines on Training Data") +
+  theme(panel.grid = element_blank()) +
   # Add decision boundary lines
   geom_contour(data = grid, aes(x = GPA, y = GMAT, z = De_num), 
                color = "black", size = 0.2)
@@ -249,11 +245,7 @@ lda_plot_test <- ggplot(data = admission_test, aes(x = GPA, y = GMAT,
                                "notadmit" = "Do Not Admit")) +
   theme_minimal() +
   # Remove grid lines
-  theme(panel.grid = element_blank(), 
-        # Center the title
-        plot.title = element_text(hjust = 0.5)) +  
-  # Title and Axes
-  labs(title = "LDA Decision Boundary Lines on Test Data") +
+  theme(panel.grid = element_blank()) +
   # Add decision boundary lines
   geom_contour(data = grid, aes(x = GPA, y = GMAT, z = De_num), 
                color = "black", size = 0.2)
@@ -298,11 +290,7 @@ qda_plot_train <- ggplot(data = admission_train, aes(x = GPA, y = GMAT,
                                "notadmit" = "Do Not Admit")) +
   theme_minimal() +
   # Remove grid lines
-  theme(panel.grid = element_blank(), 
-        # Center the title
-        plot.title = element_text(hjust = 0.5)) +  
-  # Title and Axes
-  labs(title = "QDA Decision Boundary Lines on Training Data") +
+  theme(panel.grid = element_blank()) +
   # Add decision boundary lines
   geom_contour(data = grid2, aes(x = GPA, y = GMAT, z = De_num), 
                color = "black", size = 0.2)
@@ -328,11 +316,7 @@ qda_plot_test <- ggplot(data = admission_test, aes(x = GPA, y = GMAT,
                                "notadmit" = "Do Not Admit")) +
   theme_minimal() +
   # Remove grid lines
-  theme(panel.grid = element_blank(), 
-        # Center the title
-        plot.title = element_text(hjust = 0.5)) +
-  # Title and Axes
-  labs(title = "QDA Decision Boundary Lines on Test Data") +
+  theme(panel.grid = element_blank()) +
   # Add decision boundary lines
   geom_contour(data = grid2, aes(x = GPA, y = GMAT, z = De_num), 
                color = "black", size = 0.2)
