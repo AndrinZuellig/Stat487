@@ -81,10 +81,11 @@ ggarrange(gmat_density, gpa_density, ncol=2, nrow=1,
           common.legend = TRUE, legend="bottom")
 ```
 
-# Kira lda and qda code, confusion matrices, sensitivity, specificity, overall error rate, and AUC
+# Kira's lda and qda with confusion matrices and performance metrics
 
 ```{r}
 # lda with training data
+lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
 lda.pred_train <- predict(lda.fit, admission_train)
 lda.class_train <- lda.pred_train$class
 
@@ -135,8 +136,6 @@ get_perf_metrics(lda.probs_train, lda.class_train, lda.ground_truth_train)
 
 ```{r}
 # lda with test data
-
-lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
 lda.pred_test <- predict(lda.fit, admission_test)
 lda.class_test <- lda.pred_test$class
 
@@ -151,6 +150,7 @@ get_perf_metrics(lda.probs_test, lda.class_test, lda.ground_truth_test)
 
 ```{r}
 # qda with training data
+qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
 qda.pred_train <- predict(qda.fit, admission_train)
 qda.class_train <- qda.pred_train$class
 
@@ -167,7 +167,6 @@ get_perf_metrics(qda.probs_train, qda.class_train, qda.ground_truth_train)
 
 ```{r}
 # qda with test data
-qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
 qda.pred_test <- predict(qda.fit, admission_test)
 qda.class_test <- qda.pred_test$class
 
