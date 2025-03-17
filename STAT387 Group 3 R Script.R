@@ -1,5 +1,12 @@
 # STAT387 Group 3 Final Project R Script
 
+# Rylan Harrison
+# Jocelyn Murguia Macias
+# Kira Novitchkova-Burbank
+# Andrin Zuellig
+
+rm(list = ls())
+
 # libraries
 library(MASS) # For LDA and QDA
 library(caret) # For Confusion Matrix
@@ -8,15 +15,10 @@ library(class)
 library(tidyverse)
 library(gridExtra)
 library(ggpubr) # For plotting histograms with common legend
-library(pROC)
+library(pROC) # For multiclass AUC
 
 
-
-
-
-
-
-# Rylan EDA
+#=========================== Preprocessing ===========================#
 admission <- read.csv("admission.csv")
 
 
@@ -30,6 +32,8 @@ admission_test <- admission %>%
 
 admission_train <- anti_join(admission, admission_test)
 
+
+#===================== Exploratory Data Analysis =====================#
 summary(admission_train)
 
 # Scatter plot of GMAT vs GPA
@@ -80,13 +84,7 @@ ggarrange(gmat_density, gpa_density, ncol=2, nrow=1,
 
 
 
-
-
-
-
-
-# Kira's lda and qda with confusion matrices and performance metrics
-# lda with training data
+#==================== Linear Discriminant Analysis ====================#
 lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
 lda.pred_train <- predict(lda.fit, admission_train)
 lda.class_train <- lda.pred_train$class
@@ -136,7 +134,6 @@ cat("LDA with Training Data: \n\n")
 get_perf_metrics(lda.probs_train, lda.class_train, lda.ground_truth_train)
 
 
-
 # lda with test data
 lda.pred_test <- predict(lda.fit, admission_test)
 lda.class_test <- lda.pred_test$class
@@ -150,7 +147,7 @@ cat("LDA with Test Data: \n\n")
 get_perf_metrics(lda.probs_test, lda.class_test, lda.ground_truth_test)
 
 
-
+#================== Quadratic Discriminant Analysis ==================#
 # qda with training data
 qda.fit <- qda(De ~ GPA + GMAT, data = admission_train)
 qda.pred_train <- predict(qda.fit, admission_train)
@@ -182,26 +179,21 @@ cat("QDA with Test Data: \n\n")
 get_perf_metrics(qda.probs_test, qda.class_test, qda.ground_truth_test)
 
 
-
-
-
-
-
-
-
-
-# Jocelyn \# lda decision boundaries \# qda decision boundaries
+#================== LDA and QDA Decision Boundaries ==================#
 
 ##### plot LDA desicion boundary line
-GPA_range <- seq(min(admission_train$GPA) - 1, max(admission_train$GPA) + 1, length.out = 500)
-GMAT_range <- seq(min(admission_train$GMAT) - 1, max(admission_train$GMAT) + 1, length.out = 500)
+GPA_range <- seq(min(admission_train$GPA) - 1, 
+                 max(admission_train$GPA) + 1, length.out = 500)
+GMAT_range <- seq(min(admission_train$GMAT) - 1,
+                  max(admission_train$GMAT) + 1, length.out = 500)
 grid <- expand.grid(GPA = GPA_range, GMAT = GMAT_range)
 
 # Predict the class probabilities for the grid points
 grid$De <- predict(lda.fit, newdata = grid)$class
 
 # Create numeric labels for the class (1 = admit, 2 = notadmit, 3 = border)
-grid$De_num <- as.numeric(factor(grid$De, levels = c("admit", "notadmit", "border")))
+grid$De_num <- as.numeric(factor(grid$De, 
+                                 levels = c("admit", "notadmit", "border")))
 
 
 #LDA desicion boundary line on training data
@@ -267,7 +259,8 @@ grid2 <- expand.grid(GPA = GPA_range, GMAT = GMAT_range)
 grid2$De <- predict(qda.fit, newdata = grid2)$class
 
 # Create numeric labels for the class (1 = admit, 2 = notadmit, 3 = border)
-grid2$De_num <- as.numeric(factor(grid2$De, levels = c("admit", "notadmit", "border")))
+grid2$De_num <- as.numeric(factor(grid2$De, levels = c("admit", "notadmit", 
+                                                       "border")))
 
 
 # QDA desicion boundary line on training data
@@ -327,21 +320,8 @@ qda_plot_test
 
 
 
-
-
-
-
-
-
-
-
-# Rylan KNN
+#======================== K-Nearest Neighbors ========================#
 set.seed(70)
-
-admission <- read.csv("admission.csv")
-admission$De <- as.factor(admission$De)
-
-admission_train <- anti_join(admission, admission_test)
 
 train_X <- as.matrix(admission_train[, c('GPA', 'GMAT')])
 train_X <- scale(train_X)
@@ -368,8 +348,10 @@ for (i in 1:nrow(admission_train)) {
                                         test_labels=test_Y)
 }
 
-plot(test_error_rates)
+plot(test_error_rates, type='l', xlab='K', ylab='Test Error Rate', col='blue')
 optimal_k <- which.min(test_error_rates)
+points(optimal_k, test_error_rates[optimal_k], col='red', pch=16)
+legend(0, 0.6, legend="Optimal K and Test Error", col='red', pch=16)
 
 # Train k-NN model with optimal k
 knn_model <- knn3(train_X, train_Y, k = optimal_k)
@@ -383,60 +365,59 @@ knn_train_out <- predict(knn_model, train_X, type = "class")
 knn_test_out <- predict(knn_model, test_X, type = "class")
 
 # Train Performance Metrics 
-train_metrics <- get_perf_metrics(knn_train_probs, knn_train_out, train_Y)
-train_metrics
+knn_train_metrics <- get_perf_metrics(knn_train_probs, knn_train_out, train_Y)
+knn_train_metrics
 
 # Test Performance Metrics
-test_metrics <- get_perf_metrics(knn_test_probs, knn_test_out, test_Y)
-test_metrics
+knn_test_metrics <- get_perf_metrics(knn_test_probs, knn_test_out, test_Y)
+knn_test_metrics
 
 
-combined <- train_metrics$Metrics %>% inner_join(test_metrics$Metric, by = "Metric") %>%
-  rename("Train" = Value.x, "Test" = Value.y) 
-View(combined)
+#====================== KNN Decision Boundaries ======================#
+grid_width <- 200
+x1_grid <- seq(min(train_X[, 1]) - 0.5, max(train_X[, 1]) + 0.5, l=grid_width)
+x2_grid <- seq(min(train_X[, 2]) - 0.5, max(train_X[, 2]) + 0.5, l=grid_width)
+grid <- expand.grid(x1=x1_grid, x2=x2_grid)
+
+grid$pred <- predict(knn_model, grid, type='class')
+
+# For train set 
+ggplot() + 
+  geom_raster(data=grid, aes(x=x1, y=x2, fill=pred), alpha=0.1) +
+  geom_point(data=train_X, aes(x=GPA, y=GMAT, color=train_Y), alpha=1) +
+  scale_color_manual("Admission Status", 
+                     values = c("notadmit" = "red", "border" = "orange", 
+                                "admit" = "green"), 
+                     labels = c("admit" = "Admit", "border" = "Borderline",
+                                "notadmit" = "Do Not Admit")) +
+  scale_fill_manual("Classification", 
+                    values = c("notadmit" = "red", "border" = "orange", 
+                               "admit" = "green"), 
+                    labels = c("admit" = "Admit", "border" = "Borderline",
+                               "notadmit" = "Do Not Admit")) +
+  scale_x_continuous(expand=c(0, 0)) +
+  scale_y_continuous(expand=c(0, 0)) +
+  labs(x = "Standardized GPA", y = "Standardized GMAT") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(), text = element_text(size=13)) 
 
 
-
-
-
-
-View(admission)
-
-
-
-
-
-
-
-# KNN Boundaries
-gpa_mean <- mean(admission$GPA)
-gpa_sd   <- sd(admission$GPA)
-gmat_mean <- mean(admission$GMAT)
-gmat_sd   <- sd(admission$GMAT)
-
-admission_scaled <- admission
-admission_scaled$GPA  <- (admission$GPA - gpa_mean) / gpa_sd
-admission_scaled$GMAT <- (admission$GMAT - gmat_mean) / gmat_sd
-
-x1_range <- seq(min(admission$GPA) - 1, max(admission$GPA) + 1, length.out = 200)
-x2_range <- seq(min(admission$GMAT) - 1, max(admission$GMAT) + 1, length.out = 200)
-x1_range_scaled <- (x1_range - gpa_mean) / gpa_sd
-x2_range_scaled <- (x2_range - gmat_mean) / gmat_sd
-grid <- expand.grid(x.1 = x1_range_scaled, x.2 = x2_range_scaled)
-
-
-library(class)
-grid_pred <- knn(train = admission_scaled[, c("GPA", "GMAT")],
-                 test  = grid,
-                 cl    = admission_scaled$De,
-                 k     = 3)
-grid$pred <- grid_pred
-
-library(ggplot2)
-ggplot() +
-  geom_point(data = grid, aes(x = x.1, y = x.2, color = pred), alpha = 0.1, size = 0.5) +
-  geom_point(data = admission_scaled, aes(x = GPA, y = GMAT, color = De), alpha = 0.4) +
-  labs(title = "Decision Boundary for K = 3 (Scaled Values)",
-       x = "GPA (scaled)", y = "GMAT (scaled)")
-
-
+# For test set 
+ggplot() + 
+  geom_raster(data=grid, aes(x=x1, y=x2, fill=pred), alpha=0.1) +
+  geom_point(data=test_X, aes(x=GPA, y=GMAT, color=test_Y), alpha=1) +
+  scale_color_manual("Admission Status", 
+                     values = c("notadmit" = "red", "border" = "orange", 
+                                "admit" = "green"), 
+                     labels = c("admit" = "Admit", "border" = "Borderline",
+                                "notadmit" = "Do Not Admit")) +
+  scale_fill_manual("Classification", 
+                    values = c("notadmit" = "red", "border" = "orange", 
+                               "admit" = "green"), 
+                    labels = c("admit" = "Admit", "border" = "Borderline",
+                               "notadmit" = "Do Not Admit")) +
+  scale_x_continuous(expand=c(0, 0)) +
+  scale_y_continuous(expand=c(0, 0)) +
+  labs(x = "Standardized GPA", y = "Standardized GMAT") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(), text = element_text(size=13)) 
