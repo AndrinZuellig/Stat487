@@ -86,6 +86,8 @@ ggarrange(gmat_density, gpa_density, ncol=2, nrow=1,
 
 #==================== Linear Discriminant Analysis ====================#
 lda.fit <- lda(De ~ GPA + GMAT, data = admission_train)
+
+# lda with training data
 lda.pred_train <- predict(lda.fit, admission_train)
 lda.class_train <- lda.pred_train$class
 
@@ -134,11 +136,13 @@ cat("LDA with Training Data: \n\n")
 get_perf_metrics(lda.probs_train, lda.class_train, lda.ground_truth_train)
 
 
+
 # lda with test data
 lda.pred_test <- predict(lda.fit, admission_test)
 lda.class_test <- lda.pred_test$class
 
 lda.probs_test <- lda.pred_test$posterior # probabilities for each class
+
 # defining admission_test$De as lda.ground_truth_test for clarity
 lda.ground_truth_test <- admission_test$De
 
