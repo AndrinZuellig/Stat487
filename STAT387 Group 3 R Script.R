@@ -9,11 +9,9 @@ rm(list = ls())
 
 # libraries
 library(MASS) # For LDA and QDA
-library(caret) # For Confusion Matrix
+library(caret) # For KNN and Confusion Matrix
 library(ggplot2) # For Plots
-library(class) # For KNN
 library(tidyverse) # For preprocessing
-library(gridExtra) # For Plots
 library(ggpubr) # For plotting histograms with common legend
 library(pROC) # For multiclass AUC
 
