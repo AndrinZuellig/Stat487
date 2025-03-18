@@ -12,7 +12,7 @@ library(MASS) # For LDA and QDA
 library(caret) # For KNN and Confusion Matrix
 library(ggplot2) # For Plots
 library(tidyverse) # For preprocessing
-library(ggpubr) # For plotting histograms with common legend
+library(gridExtra) # For combining multiple plots
 library(pROC) # For multiclass AUC
 
 
@@ -58,28 +58,6 @@ create_violin_plot <- function(data, y_var, y_label=y_var) {
 gmat_vs_status <- create_violin_plot(admission_train, "GMAT", "GMAT Score")
 gpa_vs_status <- create_violin_plot(admission_train, "GPA")
 grid.arrange(gmat_vs_status, gpa_vs_status, nrow = 1, ncol = 2)
-
-# Density plots
-create_density <- function(data, xvar, xlabel = xvar) {
-  p <- ggplot(data, aes(x = .data[[xvar]], fill = De)) +
-    geom_density(alpha=0.7) +
-    scale_fill_manual(
-      name = "Admission Status",
-      values = c("green", "orange", "red"), 
-      labels = c("Admit", "Borderline", "Do Not Admit")
-    ) +
-    xlab(xlabel) +
-    ylab("Density") +
-    theme_bw() 
-}
-
-# Only need one y-label and one legend
-gpa_density <- create_density(admission_train, "GPA") + theme(axis.title.y=element_blank())
-gmat_density <- create_density(admission_train, "GMAT", "GMAT Score")
-
-ggarrange(gmat_density, gpa_density, ncol=2, nrow=1, 
-          common.legend = TRUE, legend="bottom")
-
 
 
 #==================== Linear Discriminant Analysis ====================#
